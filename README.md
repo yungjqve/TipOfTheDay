@@ -25,7 +25,7 @@ cd TipOfTheDay
 pip install -r requirements.txt
 ```
 
-3. **Setting Up the `.env`File**
+3. **Setting Up the `.env` File**
 
 - Create a file named **`.env`** in the root directory of the project.
 - Add the following lines to the file:
