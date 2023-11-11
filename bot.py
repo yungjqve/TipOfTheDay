@@ -26,7 +26,6 @@ async def scrape_for_tips():
     response = requests.get(url)
     tree = html.fromstring(response.content)
 
-    # Define your XPaths here
     xpath_match = '/html/body/div[1]/div[4]/div/div/main/article/div/div[1]/div[2]/div[3]/div[2]'
     xpath_bet = '/html/body/div[1]/div[4]/div/div/main/article/div/div[1]/div[2]/div[3]/div[3]'
 
@@ -34,12 +33,20 @@ async def scrape_for_tips():
     element_bet = tree.xpath(xpath_bet)
 
     match = element_match[0].text_content().strip() if element_match else 'Element not found'
-    bet = quote = 'Parent element not found'
 
     if element_bet:
         spans = element_bet[0].findall('.//span')
-        bet = spans[0].text_content().strip() if len(spans) > 0 else 'First span not found'
-        quote = spans[1].text_content().strip() if len(spans) > 1 else 'Second span not found'
+        if len(spans) > 2:
+            # Concatenate all but the last span for 'bet', removing new lines
+            bet = ' '.join(span.text_content().strip().replace('\n', ' ') for span in spans[:-2])
+            quote = spans[-1].text_content().strip().replace('\n', ' ')  # Use the last span for 'quote'
+        elif len(spans) == 2:
+            bet = spans[0].text_content().strip().replace('\n', ' ')
+            quote = spans[1].text_content().strip().replace('\n', ' ')
+        else:
+            bet = quote = 'Span elements not found'
+    else:
+        bet = quote = 'Parent element not found'
 
     return match, bet, quote
 
