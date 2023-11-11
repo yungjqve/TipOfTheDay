@@ -51,7 +51,7 @@ async def send_daily_tip():
 
     while not client.is_closed():
         now = datetime.now(timezone('Europe/Berlin'))
-        target_time = datetime.combine(now.date(), time(0, 0))  # Set to 0:00
+        target_time = timezone('Europe/Berlin').localize(datetime.combine(now.date(), time(0, 0)))
         if now.time() > target_time.time():
             target_time += timedelta(days=1)  # Move to the next day
 
