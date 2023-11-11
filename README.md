@@ -15,8 +15,8 @@ This Discord bot automatically sends a daily betting tip to a specified Discord 
 1. **Clone the Repository**
 
 ```bash
-git clone <repository-url>
-cd <repository-name>
+git clone https://github.com/yungjqve/TipOfTheDay
+cd TipOfTheDay
 ```
 
 2. **Install Dependencies**
