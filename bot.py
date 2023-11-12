@@ -24,7 +24,7 @@ last_tip_message = None  # Variable to store the last sent tip message
 scraper = TipsScraper()
 
 async def create_tip_message():
-    match, bet, quote, date, units = asyncio.run(scraper.scrape_for_tips())
+    match, bet, quote, date, units = await scraper.scrape_for_tips()
     tip_message = (
         f"🚨 **TIP OF THE DAY {date}** 🚨\n"
         f"**Match:** {match}\n"
