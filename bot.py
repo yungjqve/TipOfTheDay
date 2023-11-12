@@ -8,6 +8,7 @@ from pytz import timezone
 from dotenv import load_dotenv
 
 from tips_scraper import TipsScraper
+from results_command import get_match_results, league_ids
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
@@ -74,6 +75,42 @@ async def send_daily_tip():
 
         await channel.send(new_tip_message)  # Sending message to the channel
         last_tip_message = new_tip_message
+
+from discord import Embed
+
+@bot.tree.command(name='results', description="Get football match results")
+@app_commands.describe(matchday='Enter the matchday number to get results', 
+                       league='Choose the league')
+@app_commands.choices(league=[app_commands.Choice(name=name, value=name) for name in league_ids.keys()])
+async def results(interaction: discord.Interaction, matchday: int, league: str):
+    try:
+        # Check for valid matchday range
+        if matchday < 1 or matchday > 38:  # Adjust the upper limit as per the league standard
+            await interaction.response.send_message(f"Please enter a valid matchday (usually between 1 and 38).", ephemeral=True)
+            return
+
+        results = get_match_results(league, matchday)
+        if not results:
+            await interaction.response.send_message("No matches found for this matchday in the selected league.", ephemeral=True)
+            return
+
+        # Check if any match result is none:none indicating future matchday
+        if any('None:None' in result for result in results):
+            await interaction.response.send_message("This matchday hasn't been played yet.", ephemeral=True)
+            return
+
+        embed = Embed(title=f"Football Results for Matchday {matchday} in {league}", 
+                      description="Here are the match results:",
+                      color=0x1a5e9a)
+
+        for result in results:
+            match_info, score = result.split(' - Score: ')
+            embed.add_field(name=match_info, value=f"Score: {score}", inline=False)
+
+        await interaction.response.send_message(embed=embed)
+    except Exception as e:
+        print(f"Error in football_results command: {e}")
+        await interaction.response.send_message("Failed to retrieve results.", ephemeral=True)
 
 @bot.event
 async def on_ready():
