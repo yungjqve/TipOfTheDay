@@ -4,3 +4,4 @@ requests
 lxml
 pytz
 discord-py-slash-command
+apscheduler

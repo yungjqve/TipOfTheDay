@@ -3,13 +3,15 @@ import discord
 from discord.ext import commands
 from discord import app_commands
 from discord import Embed
-import asyncio
-from datetime import datetime, time, timedelta
+from discord.ui import Button, View
 from pytz import timezone
 from dotenv import load_dotenv
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from apscheduler.triggers.cron import CronTrigger
+import pytz
 
 from commands.results_command import create_results_embed, league_ids
-from commands.sendtip_command import send_tip, create_tip_message
+from commands.sendtip_command import send_tip, create_tip_message, get_further_tips
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
@@ -27,32 +29,34 @@ bot = commands.Bot(command_prefix=lambda message: None, intents=intents)
 async def send_tip_wrapper(interaction: discord.Interaction):
     await send_tip(interaction)
 
-async def send_daily_tip():
-    global last_tip_message
-    await bot.wait_until_ready()
+    # Create a button and view as before
+    button = Button(label="View Further Tips", style=discord.ButtonStyle.primary, custom_id="view_further_tips")
+    view = View()
+    view.add_item(button)
+
+    # Edit the original response to add the button
+    await interaction.edit_original_response(view=view)
+
+@bot.event
+async def on_interaction(interaction: discord.Interaction):
+    if interaction.type == discord.InteractionType.component:
+        custom_id = interaction.data.get('custom_id')
+
+        if custom_id == "view_further_tips":
+            tips = await get_further_tips()
+            # Format the message to align the tips and risks in a table-like structure
+            tips_message = "```"
+            for i in range(0, len(tips), 2):
+                tips_message += f"{tips[i]:<30} | {tips[i+1]}\n"
+            tips_message += "```"
+            await interaction.response.send_message(tips_message, ephemeral=True)
+
+scheduler = AsyncIOScheduler()
+
+async def scheduled_task():
     channel = bot.get_channel(int(CHANNEL_ID))
-    if channel is None:
-        print("Channel not found.")
-        return
-
-    while not bot.is_closed():
-        now = datetime.now(timezone('Europe/Berlin'))
-        target_time = timezone('Europe/Berlin').localize(datetime.combine(now.date(), time(0, 0)))
-        if now.time() > target_time.time():
-            target_time += timedelta(days=1)  # Move to the next day
-
-        wait_seconds = (target_time - now).total_seconds()
-        await asyncio.sleep(wait_seconds)
-
-        new_tip_message = await create_tip_message()
-
-        if new_tip_message == last_tip_message:
-            print("Similar tip detected, scheduling new scrape in 8 hours.")
-            await asyncio.sleep(28800)
-            new_tip_message = await create_tip_message()
-
-        await channel.send(new_tip_message)  # Sending message to the channel
-        last_tip_message = new_tip_message
+    new_tip_message = await create_tip_message()
+    await channel.send(new_tip_message)
 
 @bot.tree.command(name='results', description="Get football match results")
 @app_commands.describe(matchday='Enter the matchday number to get results', 
@@ -78,6 +82,9 @@ async def on_ready():
 
     for guild in bot.guilds:
         print(f"Guild ID: {guild.id} (Name: {guild.name})")
-    bot.loop.create_task(send_daily_tip())
+    
+    scheduler.add_job(scheduled_task, CronTrigger(hour=17, minute=2, timezone=pytz.timezone("Europe/Berlin")))
+    scheduler.start()
+
 
 bot.run(TOKEN)
