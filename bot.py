@@ -56,7 +56,12 @@ scheduler = AsyncIOScheduler()
 async def scheduled_task():
     channel = bot.get_channel(int(CHANNEL_ID))
     new_tip_message = await create_tip_message()
-    await channel.send(new_tip_message)
+
+    button = Button(label="View Further Tips", style=discord.ButtonStyle.primary, custom_id="view_further_tips")
+    view = View()
+    view.add_item(button)
+
+    await channel.send(new_tip_message, view=view)
 
 @bot.tree.command(name='results', description="Get football match results")
 @app_commands.describe(matchday='Enter the matchday number to get results', 
@@ -83,7 +88,7 @@ async def on_ready():
     for guild in bot.guilds:
         print(f"Guild ID: {guild.id} (Name: {guild.name})")
     
-    scheduler.add_job(scheduled_task, CronTrigger(hour=17, minute=2, timezone=pytz.timezone("Europe/Berlin")))
+    scheduler.add_job(scheduled_task, CronTrigger(hour=8, minute=0, timezone=pytz.timezone("Europe/Berlin")))
     scheduler.start()
 
 
