@@ -12,6 +12,7 @@ import pytz
 
 from commands.results_command import create_results_embed, league_ids
 from commands.sendtip_command import send_tip, create_tip_message, get_further_tips
+from commands.tips_command import create_tips_embed, league_ids_tips
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
@@ -22,7 +23,7 @@ intents.guilds = True
 intents.messages = True
 intents.message_content = True
 
-bot = commands.Bot(command_prefix=lambda message: None, intents=intents)
+bot = commands.Bot(command_prefix="!", intents=intents)
 
 @bot.tree.command(name='sendtip', description="Send the daily tip")
 @app_commands.checks.has_permissions(administrator=True)
@@ -74,6 +75,18 @@ async def results(interaction: discord.Interaction, matchday: int, league: str):
         await interaction.response.send_message(embed=embed_or_message)
     else:
         await interaction.response.send_message(embed_or_message, ephemeral=True)
+
+@bot.tree.command(name='tips', description="Get football match tips")
+@app_commands.describe(league='Choose the league')
+@app_commands.choices(league=[app_commands.Choice(name=name, value=name) for name in league_ids_tips.keys()])
+async def tips(interaction: discord.Interaction, league: str):
+    await interaction.response.defer()
+    embed_or_message = create_tips_embed(league)
+
+    if isinstance(embed_or_message, Embed):
+        await interaction.followup.send(embed=embed_or_message)
+    else:
+        await interaction.followup.send(embed_or_message, ephemeral=True)
 
 @bot.event
 async def on_ready():
