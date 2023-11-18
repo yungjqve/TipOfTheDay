@@ -37,7 +37,7 @@ def get_match_results(league_name, matchday):
 def create_results_embed(league, matchday):
     try:
         # Check for valid matchday range
-        if matchday < 1 or matchday > 38:  # Adjust as per league
+        if matchday < 1 or matchday > 38:
             return "Please enter a valid matchday (usually between 1 and 38)."
 
         results = get_match_results(league, matchday)

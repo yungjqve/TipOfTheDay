@@ -1,14 +1,13 @@
 import os
 import discord
 from discord.ext import commands
-from discord import app_commands
-from discord import Embed
+from discord import app_commands, Embed
 from discord.ui import Button, View
-from pytz import timezone
 from dotenv import load_dotenv
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 import pytz
+import logging
 
 from commands.results_command import create_results_embed, league_ids
 from commands.sendtip_command import send_tip, create_tip_message, get_further_tips
@@ -25,18 +24,34 @@ intents.message_content = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
 
+# Global Error Handler
+@bot.event
+async def on_command_error(ctx, error):
+    if isinstance(error, commands.CommandError):
+        await ctx.send(f"An error occurred: {error}")
+
 @bot.tree.command(name='sendtip', description="Send the daily tip")
 @app_commands.checks.has_permissions(administrator=True)
 async def send_tip_wrapper(interaction: discord.Interaction):
-    await send_tip(interaction)
+    try:
+        await send_tip(interaction)
 
-    # Create a button and view as before
-    button = Button(label="View Further Tips", style=discord.ButtonStyle.primary, custom_id="view_further_tips")
-    view = View()
-    view.add_item(button)
+        button = Button(label="View Further Tips", style=discord.ButtonStyle.primary, custom_id="view_further_tips")
+        view = View()
+        view.add_item(button)
 
-    # Edit the original response to add the button
-    await interaction.edit_original_response(view=view)
+        await interaction.edit_original_response(view=view)
+    except Exception as e:
+        logging.error(f"Error in send_tip_wrapper: {e}")
+        await interaction.response.send_message("An error occurred while sending the tip.", ephemeral=True)
+
+# Specific Command Error Handler
+@send_tip_wrapper.error
+async def send_tip_wrapper_error(interaction, error):
+    if isinstance(error, commands.MissingPermissions):
+        await interaction.response.send_message("You do not have permission to use this command.", ephemeral=True)
+    else:
+        await interaction.response.send_message("An unexpected error occurred.", ephemeral=True)
 
 @bot.event
 async def on_interaction(interaction: discord.Interaction):
@@ -44,25 +59,31 @@ async def on_interaction(interaction: discord.Interaction):
         custom_id = interaction.data.get('custom_id')
 
         if custom_id == "view_further_tips":
-            tips = await get_further_tips()
-            # Format the message to align the tips and risks in a table-like structure
-            tips_message = "```"
-            for i in range(0, len(tips), 2):
-                tips_message += f"{tips[i]:<30} | {tips[i+1]}\n"
-            tips_message += "```"
-            await interaction.response.send_message(tips_message, ephemeral=True)
+            try:
+                tips = await get_further_tips()
+                tips_message = "```"
+                for i in range(0, len(tips), 2):
+                    tips_message += f"{tips[i]:<30} | {tips[i+1]}\n"
+                tips_message += "```"
+                await interaction.response.send_message(tips_message, ephemeral=True)
+            except Exception as e:
+                logging.error(f"Error in on_interaction: {e}")
+                await interaction.response.send_message("An error occurred while retrieving further tips.", ephemeral=True)
 
 scheduler = AsyncIOScheduler()
 
 async def scheduled_task():
-    channel = bot.get_channel(int(CHANNEL_ID))
-    new_tip_message = await create_tip_message()
+    try:
+        channel = bot.get_channel(int(CHANNEL_ID))
+        new_tip_message = await create_tip_message()
 
-    button = Button(label="View Further Tips", style=discord.ButtonStyle.primary, custom_id="view_further_tips")
-    view = View()
-    view.add_item(button)
+        button = Button(label="View Further Tips", style=discord.ButtonStyle.primary, custom_id="view_further_tips")
+        view = View()
+        view.add_item(button)
 
-    await channel.send(new_tip_message, view=view)
+        await channel.send(new_tip_message, view=view)
+    except Exception as e:
+        logging.error(f"Error during scheduled task: {e}")
 
 @bot.tree.command(name='results', description="Get football match results")
 @app_commands.describe(matchday='Enter the matchday number to get results', 
@@ -95,14 +116,13 @@ async def on_ready():
     try:
         synced = await bot.tree.sync()
         print(f"Synced {len(synced)} command(s)")
-    except Exception as exception:
-        print(exception)
+    except Exception as e:
+        logging.error(f"Error in on_ready: {e}")
 
     for guild in bot.guilds:
         print(f"Guild ID: {guild.id} (Name: {guild.name})")
     
     scheduler.add_job(scheduled_task, CronTrigger(hour=8, minute=0, timezone=pytz.timezone("Europe/Berlin")))
     scheduler.start()
-
 
 bot.run(TOKEN)

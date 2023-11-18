@@ -1,16 +1,16 @@
-# Discord Betting Tips Bot
+# TipOfTheDay Discord Bot
 
-## Overview
+## Introduction
 
-This Discord bot automatically sends a daily betting tip to a specified Discord channel. It scrapes betting information from a website and formats it as a message in Discord.
+TipOfTheDay is a Discord bot designed to provide daily betting tips to your Discord channel. It automatically scrapes and updates betting information from specified websites, offering users up-to-date betting insights directly within Discord.
 
 ## Features
 
-- **Automated Daily Messages:** Sends a "Tip of the Day" message every day.
-- **Web Scraping:** Extracts betting information from a website.
-- **Customizable:** Easy to modify and extend.
+- **Automated Daily Updates:** The bot scrapes selected betting websites daily to provide the latest tips.
+- **Easy Integration:** Simple setup process for integrating the bot into any Discord channel.
+- **Customizable Sources:** Option to specify or change the websites from which betting tips are sourced.
 
-## Installation
+## Getting Started
 
 1. **Clone the Repository**
 
