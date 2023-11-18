@@ -8,7 +8,6 @@ league_ids = {
     'Bundesliga': '2002',
     'Ligue 1': '2015',
     'Serie A': '2019',
-    'Eredivisie': '2003',
     'La Liga': '2014'
 }
 
