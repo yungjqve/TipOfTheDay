@@ -83,6 +83,7 @@ async def scheduled_task():
 
         await channel.send(new_tip_message, view=view)
     except Exception as e:
+        await channel.send("Today, there is no Tip Of The Day 😭")
         logging.error(f"Error during scheduled task: {e}")
 
 @bot.tree.command(name='results', description="Get football match results")
@@ -102,7 +103,7 @@ async def results(interaction: discord.Interaction, matchday: int, league: str):
 @app_commands.choices(league=[app_commands.Choice(name=name, value=name) for name in league_ids_tips.keys()])
 async def tips(interaction: discord.Interaction, league: str):
     await interaction.response.defer()
-    embed_or_message = create_tips_embed(league)
+    embed_or_message = await create_tips_embed(league)
 
     if isinstance(embed_or_message, Embed):
         await interaction.followup.send(embed=embed_or_message)

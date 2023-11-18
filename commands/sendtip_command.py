@@ -6,6 +6,9 @@ scraper = TipsScraper()
 async def create_tip_message():
     try:
         match, bet, quote, date, units, time, tournament = await scraper.scrape_for_tips()
+        if "Element not found" in match:
+            return "Today, there is no Tip Of The Day 😭"
+
         tip_message = (
             f"🚨 **TIP OF THE DAY {date}** 🚨\n"
             f"**Tournament: ** {tournament}\n"
