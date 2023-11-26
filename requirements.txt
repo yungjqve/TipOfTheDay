@@ -1,8 +1,8 @@
-discord.py
-python-dotenv
 requests
+python-dotenv
+discord.py
 lxml
 pytz
-discord-py-slash-command
-apscheduler
 aiohttp
+beautifulsoup4
+APScheduler

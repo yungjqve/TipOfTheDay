@@ -24,34 +24,18 @@ intents.message_content = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
 
-# Global Error Handler
 @bot.event
 async def on_command_error(ctx, error):
     if isinstance(error, commands.CommandError):
         await ctx.send(f"An error occurred: {error}")
 
 @bot.tree.command(name='sendtip', description="Send the daily tip")
-@app_commands.checks.has_permissions(administrator=True)
 async def send_tip_wrapper(interaction: discord.Interaction):
     try:
         await send_tip(interaction)
-
-        button = Button(label="View Further Tips", style=discord.ButtonStyle.primary, custom_id="view_further_tips")
-        view = View()
-        view.add_item(button)
-
-        await interaction.edit_original_response(view=view)
     except Exception as e:
         logging.error(f"Error in send_tip_wrapper: {e}")
         await interaction.response.send_message("An error occurred while sending the tip.", ephemeral=True)
-
-# Specific Command Error Handler
-@send_tip_wrapper.error
-async def send_tip_wrapper_error(interaction, error):
-    if isinstance(error, commands.MissingPermissions):
-        await interaction.response.send_message("You do not have permission to use this command.", ephemeral=True)
-    else:
-        await interaction.response.send_message("An unexpected error occurred.", ephemeral=True)
 
 @bot.event
 async def on_interaction(interaction: discord.Interaction):
